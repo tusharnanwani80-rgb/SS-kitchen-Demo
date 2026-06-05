@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SS Kitchen | Owner Portal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { 
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316', // Vibrant Orange Accent
+                            600: '#ea580c',
+                            900: '#7c2d12',
+                        },
+                        app: {
+                            bg: '#F8FAFC',
+                            card: '#FFFFFF',
+                            darkBg: '#0B0F19',
+                            darkCard: '#131B2B',
+                            darkBorder: '#1E293B'
+                        }
+                    },
+                    animation: { 
+                        'fade-in': 'fadeIn 0.3s ease-out forwards', 
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(40px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <style>
+        body { background-color: #F8FAFC; overflow: hidden; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; transition: background-color 0.3s ease; }
+        .dark body { background-color: #0B0F19; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .modal-overlay-blur { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .glass-lock { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+        .dark .glass-lock { background: rgba(11, 15, 25, 0.85); }
+        
+        /* Fixed Safe Area Padding */
+        #main-scroll-area { padding-bottom: calc(110px + env(safe-area-inset-bottom, 20px)); } 
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+        
+        input[type="password"] { font-family: monospace; letter-spacing: 0.4em; }
+        input::placeholder { letter-spacing: normal; font-family: "Plus Jakarta Sans", sans-serif; }
+    </style>
+</head>
+<body class="text-gray-900 dark:text-gray-50 h-screen w-screen relative flex justify-center selection:bg-brand-100 dark:selection:bg-brand-900">
+
+    <main class="w-full h-full max-w-xl bg-app-bg dark:bg-app-darkBg relative flex flex-col shadow-2xl overflow-hidden transition-colors duration-300">
+        
+        <!-- Toast Container -->
+        <div id="toast-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-md"></div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto no-scrollbar px-5 pt-8 w-full relative flex flex-col" id="main-scroll-area">
+            
+            <!-- VIEW: HOME DASHBOARD -->
+            <div id="admin-view-home" class="admin-view block animate-fade-in w-full flex-grow">
+                <header class="flex justify-between items-center mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gray-900 dark:bg-white rounded-full flex items-center justify-center text-white dark:text-gray-900 shadow-md">
+                            <i class="ri-user-star-fill text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-0.5">Owner Portal</p>
+                            <h1 class="text-xl font-black text-gray-900 dark:text-white leading-none">Overview</h1>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="App.UI.toggleTheme()" class="w-10 h-10 bg-white dark:bg-app-darkCard rounded-full flex items-center justify-center shadow-sm border border-gray-100 dark:border-app-darkBorder text-gray-600 dark:text-gray-300 active:scale-95 transition-all">
+                            <i id="theme-icon" class="ri-moon-fill text-lg"></i>
+                        </button>
+                        <button onclick="App.API.forceSync()" class="w-10 h-10 bg-white dark:bg-app-darkCard rounded-full flex items-center justify-center shadow-sm border border-gray-100 dark:border-app-darkBorder text-gray-600 dark:text-gray-300 active:scale-95 transition-all">
+                            <i class="ri-refresh-line text-lg"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="bg-gray-900 dark:bg-app-darkCard text-white p-7 rounded-[2rem] shadow-lg mb-8 border border-transparent dark:border-app-darkBorder relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-white/5 dark:text-white/5"><i class="ri-wallet-3-fill text-9xl"></i></div>
+                    <span class="font-bold text-xs uppercase tracking-widest text-gray-400 block mb-2">Total Revenue</span>
+                    <span class="text-4xl font-black tracking-tight relative z-10" id="home-stat-rev">₹0</span>
+                    
+                    <div class="mt-6 flex gap-3 relative z-10">
+                        <button onclick="App.UI.navigate('pos')" class="flex-1 bg-brand-500 text-white font-black py-3 rounded-xl text-sm active:scale-95 transition-transform shadow-md shadow-brand-500/20">Create Order</button>
+                        <button onclick="App.UI.navigate('orders')" class="flex-1 bg-gray-800 dark:bg-gray-800 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
+                            Active Orders <span id="home-stat-orders" class="bg-brand-500 px-2 py-0.5 rounded-full text-xs">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end mb-4 px-1">
+                    <h2 class="text-lg font-black text-gray-900 dark:text-white">Recent Activity</h2>
+                    <button onclick="App.UI.navigate('orders')" class="text-xs font-bold text-brand-500 hover:text-brand-600 transition-colors">See all</button>
+                </div>
+                
+                <div id="home-recent-orders" class="space-y-3 mb-8">
+                    <div class="p-6 text-center text-gray-400 font-bold text-sm bg-white dark:bg-app-darkCard rounded-2xl border border-gray-100 dark:border-app-darkBorder">Loading activity...</div>
+                </div>
+            </div>
+
+            <!-- VIEW: CREATE ORDER (POS) -->
+            <div id="admin-view-pos" class="admin-view hidden animate-fade-in w-full flex-grow">
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-4 px-1">Create Order</h2>
+                
+                <!-- Search Bar -->
+                <div class="relative mb-6">
+                    <i class="ri-search-line absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <input type="text" oninput="App.Controllers.POS.search(this.value)" placeholder="Search menu..." class="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-app-darkCard border border-gray-100 dark:border-gray-800 rounded-2xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all shadow-sm dark:text-white">
+                </div>
+
+                <!-- Enlarged Categories -->
+                <div class="flex gap-3 overflow-x-auto no-scrollbar mb-6 pb-2 px-1" id="pos-categories"></div>
+                
+                <!-- Menu Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8" id="pos-grid"></div>
+            </div>
+
+            <!-- VIEW: ACTIVE ORDERS -->
+            <div id="admin-view-orders" class="admin-view hidden animate-fade-in w-full h-full flex-col flex-grow">
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 px-1 shrink-0">Active Orders</h2>
+                <div class="flex flex-col gap-4 overflow-y-auto no-scrollbar pb-6" id="dispatch-grid"></div>
+            </div>
+
+            <!-- VIEW: MANAGE MENU -->
+            <div id="admin-view-menu" class="admin-view hidden animate-fade-in w-full h-full flex-col flex-grow">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <h2 class="text-2xl font-black text-gray-900 dark:text-white">Manage Menu</h2>
+                    <button onclick="App.Controllers.Menu.openEditor()" class="bg-gray-900 dark:bg-white text-white dark:text-gray-900 w-10 h-10 rounded-full font-black flex items-center justify-center shadow-md active:scale-95 transition-transform"><i class="ri-add-line text-xl"></i></button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative mb-6">
+                    <i class="ri-search-line absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <input type="text" oninput="App.Controllers.Menu.search(this.value)" placeholder="Search items to edit..." class="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-app-darkCard border border-gray-100 dark:border-gray-800 rounded-2xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all shadow-sm dark:text-white">
+                </div>
+
+                <div class="flex gap-3 overflow-x-auto no-scrollbar mb-6 pb-2 px-1" id="menu-categories"></div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto no-scrollbar pb-6" id="menu-grid"></div>
+            </div>
+
+            <!-- VIEW: SETTINGS -->
+            <div id="admin-view-settings" class="admin-view hidden animate-fade-in w-full flex-grow">
+                <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 px-1">App Settings</h2>
+                
+                <div class="relative bg-white dark:bg-app-darkCard rounded-[2rem] shadow-sm border border-gray-100 dark:border-app-darkBorder p-6 overflow-hidden min-h-[400px] flex flex-col justify-center mb-8">
+                    
+                    <div class="space-y-5">
+                        <div class="mb-6 text-center">
+                            <div class="w-14 h-14 bg-brand-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-brand-500 mb-3 mx-auto"><i class="ri-image-edit-fill text-2xl"></i></div>
+                            <h3 class="font-black text-xl text-gray-900 dark:text-white mb-1">Image Hosting</h3>
+                            <p class="text-xs text-gray-500 font-bold">Configure Cloudinary preset for menu imagery.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 pl-1">Cloud Name</label>
+                            <input type="text" id="setting-cloud-name" placeholder="e.g. dxyz123" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl font-bold text-sm focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 pl-1">Upload Preset</label>
+                            <input type="text" id="setting-cloud-preset" placeholder="e.g. unsigned_preset" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl font-bold text-sm focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                        </div>
+                        <button onclick="App.Controllers.Settings.save()" class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-4 rounded-xl font-black mt-2 active:scale-95 transition-transform shadow-md">Save Config</button>
+                    </div>
+
+                    <!-- Glassmorphism PIN Lock -->
+                    <div id="settings-pin-lock" class="absolute inset-0 z-50 glass-lock flex flex-col items-center justify-center p-8 text-center transition-all duration-500 rounded-[2rem]">
+                        <div class="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-center text-gray-900 dark:text-white mb-6">
+                            <i class="ri-lock-2-fill text-2xl"></i>
+                        </div>
+                        <h3 class="font-black text-gray-900 dark:text-white text-2xl mb-2">Restricted</h3>
+                        <p class="text-xs text-gray-500 font-bold mb-8 px-2 leading-relaxed">This section can only be accessed by seen and sold agency.</p>
+                        
+                        <input type="password" id="pin-input" placeholder="••••••" class="w-full text-center px-5 py-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl font-black text-xl shadow-inner mb-4 focus:border-brand-500 dark:focus:border-brand-500 outline-none text-gray-900 dark:text-white transition-all">
+                        <button onclick="App.Controllers.Settings.verifyPin()" class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-4 rounded-xl font-black active:scale-95 transition-transform text-sm shadow-md">Unlock Module</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Footer (Always at the bottom of the scroll view) -->
+            <footer class="mt-auto pt-10 pb-4 text-center w-full">
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
+                    This app was created by <br>
+                    <a href="https://tusharnanwani80-rgb.github.io/seen-and-sold-check/" target="_blank" class="text-brand-500 dark:text-brand-500 font-black hover:underline inline-block mt-1.5 text-sm normal-case tracking-normal transition-colors">Seen and Sold Agency</a>
+                </p>
+            </footer>
+
+        </div>
+
+        <!-- Floating Action Button for Cart (View Order) -->
+        <button id="floating-cart-btn" onclick="App.Controllers.POS.openCart()" class="fixed bottom-24 right-5 bg-brand-500 text-white px-5 py-3.5 rounded-[1.5rem] shadow-lg shadow-brand-500/30 flex items-center gap-3 z-[80] transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none active:scale-95">
+            <i class="ri-shopping-bag-3-fill text-xl"></i>
+            <div class="flex flex-col text-left">
+                <span class="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">View Order</span>
+                <span class="text-sm font-bold leading-none" id="floating-cart-text">0 items | ₹0</span>
+            </div>
+        </button>
+
+        <!-- Integrated Frosted Glass Bottom Navigation -->
+        <nav class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-xl bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 pb-safe pt-2 px-4 flex justify-between items-center z-[90]">
+            <button onclick="App.UI.navigate('home')" class="admin-nav-btn flex-1 flex flex-col items-center justify-center py-2 text-brand-500" data-target="home">
+                <i class="ri-home-5-fill text-2xl"></i>
+                <span class="text-[9px] font-bold mt-1 tracking-wide">Home</span>
+            </button>
+            <button onclick="App.UI.navigate('orders')" class="admin-nav-btn relative flex-1 flex flex-col items-center justify-center py-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" data-target="orders">
+                <i class="ri-history-line text-2xl"></i>
+                <span class="text-[9px] font-bold mt-1 tracking-wide">Orders</span>
+                <span id="nav-pending-count" class="absolute top-1 right-1/4 bg-brand-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-black scale-0 transition-transform">0</span>
+            </button>
+            <button onclick="App.UI.navigate('pos')" class="admin-nav-btn flex-1 flex flex-col items-center justify-center py-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" data-target="pos">
+                <i class="ri-shopping-cart-2-line text-2xl"></i>
+                <span class="text-[9px] font-bold mt-1 tracking-wide">Order</span>
+            </button>
+            <button onclick="App.UI.navigate('menu')" class="admin-nav-btn flex-1 flex flex-col items-center justify-center py-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" data-target="menu">
+                <i class="ri-restaurant-2-line text-2xl"></i>
+                <span class="text-[9px] font-bold mt-1 tracking-wide">Menu</span>
+            </button>
+            <button onclick="App.UI.navigate('settings')" class="admin-nav-btn flex-1 flex flex-col items-center justify-center py-2 text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors" data-target="settings">
+                <i class="ri-settings-4-line text-2xl"></i>
+                <span class="text-[9px] font-bold mt-1 tracking-wide">Settings</span>
+            </button>
+        </nav>
+    </main>
+
+    <!-- MODALS -->
+
+    <!-- Cart Bottom Sheet Modal -->
+    <div id="cart-modal" class="fixed inset-0 modal-overlay-blur z-[999] hidden items-end sm:items-center justify-center transition-opacity opacity-0 p-4">
+        <form onsubmit="App.Controllers.POS.checkout(event)" class="bg-white dark:bg-app-darkCard w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-app-darkBorder max-h-[85vh]">
+            <div class="p-6 pb-4 border-b border-gray-50 dark:border-gray-800/50 flex justify-between items-center">
+                <div>
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Review Order</h3>
+                </div>
+                <button type="button" onclick="App.Controllers.POS.closeCart()" class="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-900 dark:text-white"><i class="ri-close-line text-xl"></i></button>
+            </div>
+            
+            <div class="p-5 flex-grow overflow-y-auto no-scrollbar space-y-4">
+                <!-- Customer Details -->
+                <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+                    <input type="text" id="pos-cust-name" required placeholder="Customer Name" class="w-full px-4 py-3 bg-white dark:bg-gray-800 dark:text-white border border-gray-100 dark:border-gray-700 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                    <input type="tel" id="pos-cust-phone" placeholder="Phone (Optional)" class="w-full px-4 py-3 bg-white dark:bg-gray-800 dark:text-white border border-gray-100 dark:border-gray-700 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                </div>
+                
+                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 pt-2">Cart Items</h4>
+                <div class="space-y-2 mb-4" id="modal-pos-cart-items">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-app-darkCard pb-safe">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <span class="text-gray-500 dark:text-gray-400 font-bold text-sm uppercase tracking-widest">Total Pay</span>
+                    <span id="modal-pos-cart-total" class="text-3xl font-black text-gray-900 dark:text-white tracking-tight">₹0</span>
+                </div>
+                <button type="submit" class="w-full py-4 rounded-xl font-black text-white bg-brand-500 active:scale-95 transition-transform text-lg shadow-md shadow-brand-500/20">Confirm Order</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Order Details Modal -->
+    <div id="order-modal" class="fixed inset-0 modal-overlay-blur z-[999] hidden items-end sm:items-center justify-center transition-opacity opacity-0 p-4">
+        <div class="bg-white dark:bg-app-darkCard w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-slide-up border border-gray-100 dark:border-app-darkBorder">
+            <div class="p-6 pb-4 border-b border-gray-50 dark:border-gray-800/50 flex justify-between items-start">
+                <div>
+                    <span id="modal-order-type" class="text-brand-500 text-[9px] font-black uppercase tracking-widest mb-1 block">Order Source</span>
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight" id="modal-order-id">#1000</h3>
+                </div>
+                <div class="flex gap-2">
+                    <a href="#" id="modal-call-btn" class="w-10 h-10 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center"><i class="ri-phone-fill text-lg"></i></a>
+                    <button onclick="App.Controllers.Orders.closeModal()" class="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-900 dark:text-white"><i class="ri-close-line text-xl"></i></button>
+                </div>
+            </div>
+            <div class="p-6 bg-white dark:bg-app-darkCard overflow-y-auto max-h-[50vh] no-scrollbar">
+                <p class="font-black text-xl text-gray-900 dark:text-white mb-1" id="modal-cust-name">-</p>
+                <p class="text-xs font-bold text-gray-500 mb-6" id="modal-cust-address">-</p>
+                
+                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Order Items</h4>
+                <div id="modal-items-list" class="space-y-2 mb-6"></div>
+                
+                <div class="flex justify-between items-end mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-gray-400">Total</span>
+                    <span class="font-black text-2xl tracking-tight text-gray-900 dark:text-white" id="modal-total">₹0</span>
+                </div>
+
+                <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Status Update</h4>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors border border-transparent"><input type="radio" name="order-step" value="1" class="w-4 h-4 accent-brand-500"><span class="font-bold text-gray-900 dark:text-white text-sm">Received</span></label>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors border border-transparent"><input type="radio" name="order-step" value="2" class="w-4 h-4 accent-brand-500"><span class="font-bold text-gray-900 dark:text-white text-sm">Preparing</span></label>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors border border-transparent"><input type="radio" name="order-step" value="3" class="w-4 h-4 accent-brand-500"><span class="font-bold text-gray-900 dark:text-white text-sm">Packed</span></label>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors border border-transparent"><input type="radio" name="order-step" value="4" class="w-4 h-4 accent-brand-500"><span class="font-bold text-gray-900 dark:text-white text-sm">Out for Delivery</span></label>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-green-50 dark:bg-green-900/10 transition-colors"><input type="radio" name="order-step" value="5" class="w-4 h-4 accent-green-600"><span class="font-black text-green-700 dark:text-green-400 text-sm">Delivered (Close)</span></label>
+                </div>
+            </div>
+            <div class="p-5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-app-darkCard flex justify-between gap-3 pb-safe">
+                <button onclick="App.Controllers.Orders.rejectOrder()" class="w-14 h-14 rounded-xl font-bold text-red-500 bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0"><i class="ri-delete-bin-fill text-xl"></i></button>
+                <button onclick="App.Controllers.Orders.saveAndSync()" class="flex-grow py-4 rounded-xl font-black text-white bg-gray-900 dark:bg-white dark:text-gray-900 active:scale-95 transition-transform text-sm shadow-md">Update Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Editor Modal -->
+    <div id="menu-editor-modal" class="fixed inset-0 modal-overlay-blur z-[999] hidden items-end sm:items-center justify-center transition-opacity opacity-0 p-4">
+        <div class="bg-white dark:bg-app-darkCard w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up border border-gray-100 dark:border-app-darkBorder">
+            <div class="px-6 py-5 border-b border-gray-50 dark:border-gray-800/50 flex justify-between items-center">
+                <h3 class="text-xl font-black text-gray-900 dark:text-white tracking-tight" id="menu-editor-title">Item</h3>
+                <button onclick="App.Controllers.Menu.closeEditor()" class="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center text-gray-900 dark:text-white"><i class="ri-close-line font-bold"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto no-scrollbar flex-grow">
+                <input type="hidden" id="menu-item-id">
+                <input type="hidden" id="menu-item-image-url">
+                
+                <div class="flex items-center gap-4 mb-6">
+                    <div id="image-preview" class="w-20 h-20 rounded-2xl bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center text-gray-400 border border-gray-100 dark:border-gray-800 overflow-hidden relative">
+                        <i class="ri-image-add-fill text-2xl"></i>
+                        <img id="image-preview-img" src="" class="absolute inset-0 w-full h-full object-cover hidden">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase tracking-widest bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-xl cursor-pointer active:scale-95 transition-transform inline-block mb-1 shadow-sm">
+                            Upload Photo
+                            <input type="file" id="menu-image-upload" accept="image/*" class="hidden" onchange="App.Controllers.Menu.uploadImage(event)">
+                        </label>
+                        <div id="upload-status" class="text-[10px] text-gray-500 font-bold hidden animate-pulse">Uploading...</div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <input type="text" id="menu-item-name" placeholder="Item Name" required class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="menu-item-category" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all appearance-none">
+                            <option value="Coffee">Coffee</option>
+                            <option value="Bakery">Bakery</option>
+                            <option value="Meals">Meals</option>
+                        </select>
+                        <input type="number" id="menu-item-price" placeholder="Price (₹)" required class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                    </div>
+                    <textarea id="menu-item-desc" placeholder="Brief Description" rows="2" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all resize-none"></textarea>
+                    
+                    <label class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl cursor-pointer mt-2">
+                        <span class="font-bold text-sm text-gray-900 dark:text-white">Visible In Stock</span>
+                        <input type="checkbox" id="menu-item-active" class="w-5 h-5 accent-brand-500 rounded cursor-pointer" checked>
+                    </label>
+                </div>
+            </div>
+            <div class="p-5 border-t border-gray-50 dark:border-gray-800 flex justify-between gap-3 pb-safe bg-white dark:bg-app-darkCard">
+                <button type="button" id="btn-delete-menu" class="w-14 h-14 rounded-xl font-bold text-gray-500 bg-gray-50 dark:bg-gray-800 hidden items-center justify-center shrink-0"><i class="ri-delete-bin-fill text-xl"></i></button>
+                <button onclick="App.Controllers.Menu.saveItem()" class="flex-grow py-4 rounded-xl font-black text-white dark:text-gray-900 bg-gray-900 dark:bg-white active:scale-95 transition-transform text-sm shadow-md">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const App = {
+            API_URL: 'https://script.google.com/macros/s/AKfycbxTorDXUgY8SvlReaot-JQjvAyGLwMvvmB4S4BO85vJbq0FFR5nhuQv9wSWIJhE4xB-/exec',
+            State: { menu: [], orders: [], posCart: [], activeCategory: 'All', currentOrder: null, posSearch: '', menuSearch: '' },
+            
+            Icons: {
+                'Coffee': 'ri-cup-hot-fill',
+                'Bakery': 'ri-bread-fill',
+                'Meals': 'ri-restaurant-fill',
+                'All': 'ri-function-fill',
+                'Default': 'ri-restaurant-2-fill'
+            },
+
+            API: {
+                async sync(action, payload = {}) {
+                    payload.action = action;
+                    try {
+                        const res = await fetch(App.API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify(payload)
+                        });
+                        return await res.json();
+                    } catch(e) {
+                        console.error(e);
+                        App.UI.toast("Connection Error", "error");
+                        return null;
+                    }
+                },
+                async forceSync() {
+                    const btn = document.querySelector('.ri-refresh-line');
+                    if(btn) btn.classList.add('animate-spin');
+                    const data = await this.sync("fetchOwnerData");
+                    if(data && data.status === 'success') {
+                        App.State.menu = data.menu;
+                        App.State.orders = data.orders;
+                        App.Controllers.Home.render();
+                        App.Controllers.Orders.render();
+                        App.Controllers.Menu.render();
+                        App.Controllers.POS.renderMenu();
+                        App.UI.toast("Data synchronized");
+                    }
+                    if(btn) btn.classList.remove('animate-spin');
+                }
+            },
+
+            UI: {
+                toast(msg, type = "success") {
+                    const container = document.getElementById('toast-container');
+                    const toast = document.createElement('div');
+                    const isError = type === 'error';
+                    const icon = isError ? 'ri-error-warning-fill text-red-500' : 'ri-check-line text-brand-500';
+                    
+                    toast.className = `bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-3.5 rounded-xl shadow-xl flex items-center justify-center gap-3 animate-slide-up transform transition-all mx-auto text-center border border-gray-800 dark:border-gray-200`;
+                    toast.innerHTML = `<i class="${icon} text-xl"></i><p class="text-sm font-bold">${msg}</p>`;
+                    
+                    container.appendChild(toast);
+                    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(10px)'; setTimeout(() => toast.remove(), 300); }, 2500);
+                },
+                navigate(target) {
+                    document.querySelectorAll('.admin-nav-btn').forEach(b => {
+                        const icon = b.querySelector('i');
+                        if(b.dataset.target === target) {
+                            b.classList.add('text-brand-500');
+                            b.classList.remove('text-gray-400', 'dark:text-gray-500', 'hover:text-gray-900', 'dark:hover:text-white');
+                            if(icon.className.includes('-line')) icon.className = icon.className.replace('-line', '-fill');
+                        } else {
+                            b.classList.remove('text-brand-500');
+                            b.classList.add('text-gray-400', 'dark:text-gray-500', 'hover:text-gray-900', 'dark:hover:text-white');
+                            if(icon.className.includes('-fill')) icon.className = icon.className.replace('-fill', '-line');
+                        }
+                    });
+                    
+                    document.querySelectorAll('.admin-view').forEach(v => {
+                        v.classList.add('hidden');
+                        v.classList.remove('block', 'flex', 'flex-col');
+                    });
+                    
+                    const el = document.getElementById(`admin-view-${target}`);
+                    el.classList.remove('hidden');
+                    if(target === 'pos' || target === 'home' || target === 'settings') el.classList.add('block', 'flex-grow');
+                    else el.classList.add('flex', 'flex-col', 'flex-grow');
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                toggleTheme() {
+                    const html = document.documentElement;
+                    const isDark = html.classList.toggle('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    document.getElementById('theme-icon').className = isDark ? 'ri-sun-fill text-lg' : 'ri-moon-fill text-lg';
+                },
+                initTheme() {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    document.getElementById('theme-icon').className = isDark ? 'ri-sun-fill text-lg' : 'ri-moon-fill text-lg';
+                }
+            },
+
+            Controllers: {
+                Home: {
+                    render() {
+                        const totalRev = App.State.orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+                        const activeOrders = App.State.orders.filter(o => o.dispatchStep > 0 && o.dispatchStep < 5).length;
+                        
+                        document.getElementById('home-stat-rev').innerText = `₹${totalRev}`;
+                        document.getElementById('home-stat-orders').innerText = activeOrders;
+                        
+                        const recentGrid = document.getElementById('home-recent-orders');
+                        if(recentGrid) {
+                            const recent = App.State.orders.slice(0, 4);
+                            recentGrid.innerHTML = recent.length ? recent.map(o => `
+                                <div onclick="App.Controllers.Orders.openModal('${o.id}')" class="flex justify-between items-center p-4 rounded-2xl bg-white dark:bg-app-darkCard shadow-sm border border-gray-100 dark:border-app-darkBorder cursor-pointer active:scale-95 transition-transform">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-full bg-brand-50 dark:bg-gray-800 text-brand-500 flex items-center justify-center"><i class="${o.customerId === 'WALK_IN' ? 'ri-store-2-fill' : 'ri-smartphone-fill'} text-lg"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-gray-900 dark:text-white">${o.name}</h4>
+                                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">${o.id.replace('#','')}</p>
+                                        </div>
+                                    </div>
+                                    <span class="font-black text-gray-900 dark:text-white text-base">₹${o.total}</span>
+                                </div>
+                            `).join('') : '<div class="p-6 text-center text-gray-400 font-bold text-sm bg-white dark:bg-app-darkCard rounded-2xl border border-gray-100 dark:border-app-darkBorder">No recent transactions</div>';
+                        }
+                    }
+                },
+                Settings: {
+                    init() {
+                        document.getElementById('setting-cloud-name').value = localStorage.getItem('c_cloud') || '';
+                        document.getElementById('setting-cloud-preset').value = localStorage.getItem('c_preset') || '';
+                    },
+                    save() {
+                        localStorage.setItem('c_cloud', document.getElementById('setting-cloud-name').value);
+                        localStorage.setItem('c_preset', document.getElementById('setting-cloud-preset').value);
+                        App.UI.toast("Settings Saved");
+                    },
+                    verifyPin() {
+                        const pin = document.getElementById('pin-input').value;
+                        if(pin === "4K2004") {
+                            const lock = document.getElementById('settings-pin-lock');
+                            lock.classList.add('opacity-0', 'pointer-events-none');
+                            setTimeout(() => lock.classList.add('hidden'), 500);
+                            App.UI.toast("Access Granted");
+                        } else {
+                            App.UI.toast("Incorrect PIN", "error");
+                            document.getElementById('pin-input').value = "";
+                        }
+                    }
+                },
+                POS: {
+                    search(query) {
+                        App.State.posSearch = query.toLowerCase();
+                        this.renderMenu();
+                    },
+                    renderMenu() {
+                        const grid = document.getElementById('pos-grid');
+                        const cats = ['All', ...new Set(App.State.menu.map(m => m.category))];
+                        
+                        document.getElementById('pos-categories').innerHTML = cats.map(c => `
+                            <button onclick="App.State.activeCategory='${c}'; App.Controllers.POS.renderMenu()" 
+                                class="${App.State.activeCategory===c ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-white dark:bg-app-darkCard text-gray-500 border border-gray-200 dark:border-gray-800'} px-6 py-3.5 rounded-full text-xs font-black uppercase tracking-wide transition-all shrink-0 flex items-center gap-2 shadow-sm">
+                                <i class="${App.Icons[c] || App.Icons['Default']} text-base"></i> ${c}
+                            </button>`).join('');
+                        
+                        let items = App.State.activeCategory === 'All' ? App.State.menu : App.State.menu.filter(m => m.category === App.State.activeCategory);
+                        
+                        // Apply search filter
+                        if(App.State.posSearch) {
+                            items = items.filter(m => m.name.toLowerCase().includes(App.State.posSearch));
+                        }
+                        
+                        grid.innerHTML = items.filter(i=>i.active).map(item => {
+                            const iconHtml = item.imageUrl 
+                                ? `<div class="w-full aspect-[4/3] rounded-xl mb-3 bg-cover bg-center" style="background-image: url('${item.imageUrl}')"></div>` 
+                                : `<div class="w-full aspect-[4/3] rounded-xl mb-3 bg-brand-50 dark:bg-gray-800 flex items-center justify-center text-brand-300 dark:text-gray-600"><i class="${App.Icons[item.category] || App.Icons['Default']} text-3xl opacity-50"></i></div>`;
+                                
+                            return `
+                            <div onclick="App.Controllers.POS.addToCart('${item.id}')" class="bg-white dark:bg-app-darkCard rounded-[1.5rem] p-2.5 shadow-sm border border-gray-100 dark:border-app-darkBorder cursor-pointer active:scale-95 transition-transform flex flex-col h-full hover:border-brand-500 dark:hover:border-brand-500">
+                                ${iconHtml}
+                                <div class="px-1 flex flex-col flex-grow justify-between pb-1">
+                                    <h4 class="font-bold text-xs text-gray-900 dark:text-white leading-tight mb-2 line-clamp-2">${item.name}</h4>
+                                    <span class="font-black text-brand-600 dark:text-brand-500 text-sm mt-auto">₹${item.price}</span>
+                                </div>
+                            </div>`
+                        }).join('');
+                    },
+                    addToCart(id) {
+                        const item = App.State.menu.find(m => m.id === id);
+                        const existing = App.State.posCart.find(i => i.id === id);
+                        if(existing) existing.qty++; else App.State.posCart.push({...item, qty:1});
+                        this.updateFloatingBtn();
+                        this.renderCart();
+                        
+                        // Small success feedback
+                        App.UI.toast(`Added ${item.name}`);
+                    },
+                    updateFloatingBtn() {
+                        const btn = document.getElementById('floating-cart-btn');
+                        if(App.State.posCart.length > 0) {
+                            btn.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+                            btn.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                            const total = App.State.posCart.reduce((s,i)=>s+(i.price*i.qty),0);
+                            const items = App.State.posCart.reduce((s,i)=>s+i.qty,0);
+                            document.getElementById('floating-cart-text').innerText = `${items} items | ₹${total}`;
+                        } else {
+                            btn.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+                            btn.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                            this.closeCart(); // Auto close modal if emptied
+                        }
+                    },
+                    openCart() {
+                        const m = document.getElementById('cart-modal');
+                        m.classList.remove('hidden'); m.classList.add('flex');
+                        setTimeout(() => m.classList.remove('opacity-0'), 10);
+                        this.renderCart();
+                    },
+                    closeCart() {
+                        const m = document.getElementById('cart-modal');
+                        m.classList.add('opacity-0');
+                        setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+                    },
+                    renderCart() {
+                        const c = document.getElementById('modal-pos-cart-items');
+                        let total = 0;
+                        if(App.State.posCart.length===0) { c.innerHTML='<div class="text-center py-6 text-gray-400 font-bold text-sm">Cart is empty.</div>'; document.getElementById('modal-pos-cart-total').innerText="₹0"; return;}
+                        
+                        c.innerHTML = App.State.posCart.map((item, i) => {
+                            total += item.price * item.qty;
+                            return `
+                                <div class="flex justify-between items-center py-3 px-2 border-b border-gray-50 dark:border-gray-800 last:border-0">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900 dark:text-white">${item.name}</span>
+                                        <span class="text-brand-500 font-bold text-[10px] mt-0.5">₹${item.price}</span>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" onclick="App.Controllers.POS.adjustQty('${item.id}', -1)" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-900 dark:text-white"><i class="ri-subtract-line"></i></button>
+                                        <span class="font-black text-sm text-gray-900 dark:text-white w-4 text-center">${item.qty}</span>
+                                        <button type="button" onclick="App.Controllers.POS.adjustQty('${item.id}', 1)" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-900 dark:text-white"><i class="ri-add-line"></i></button>
+                                    </div>
+                                </div>`;
+                        }).join('');
+                        document.getElementById('modal-pos-cart-total').innerText = `₹${total}`;
+                    },
+                    adjustQty(id, delta) {
+                        const item = App.State.posCart.find(i => i.id === id);
+                        if(!item) return;
+                        item.qty += delta;
+                        if(item.qty <= 0) App.State.posCart = App.State.posCart.filter(i => i.id !== id);
+                        this.renderCart();
+                        this.updateFloatingBtn();
+                    },
+                    async checkout(e) {
+                        e.preventDefault();
+                        if(App.State.posCart.length===0) return;
+                        const order = {
+                            id: "#" + Date.now().toString().slice(-4),
+                            name: document.getElementById('pos-cust-name').value || "Walk-In",
+                            phone: document.getElementById('pos-cust-phone').value || "",
+                            address: "Store Purchase",
+                            items: App.State.posCart.map(i=>({name:i.name, qty:i.qty, price:i.price})),
+                            total: App.State.posCart.reduce((s,i)=>s+(i.price*i.qty),0),
+                            method: "CASH", paymentStatus: "Paid", dispatchStep: 5,
+                            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                            customerId: "WALK_IN"
+                        };
+                        App.State.orders.unshift(order);
+                        App.State.posCart = []; 
+                        this.renderCart(); this.updateFloatingBtn(); this.closeCart(); e.target.reset();
+                        App.UI.toast(`Order Created Successfully`);
+                        await App.API.sync("createOrder", {order});
+                        App.Controllers.Orders.render();
+                        App.Controllers.Home.render();
+                    }
+                },
+                Orders: {
+                    render() {
+                        const grid = document.getElementById('dispatch-grid');
+                        const active = App.State.orders.filter(o => o.dispatchStep > 0 && o.dispatchStep < 5);
+                        
+                        const badge = document.getElementById('nav-pending-count');
+                        badge.innerText = active.length;
+                        if(active.length > 0) badge.classList.remove('scale-0');
+                        else badge.classList.add('scale-0');
+                        
+                        const stepNames = ["", "Received", "Preparing", "Packed", "Out for Delivery"];
+                        const colors = ["", "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300", "bg-brand-500 text-white", "bg-gray-800 text-white dark:bg-white dark:text-gray-900", "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200"];
+
+                        grid.innerHTML = active.map(o => `
+                            <div onclick="App.Controllers.Orders.openModal('${o.id}')" class="bg-white dark:bg-app-darkCard rounded-[1.5rem] p-5 shadow-sm border border-gray-100 dark:border-app-darkBorder cursor-pointer active:scale-95 transition-transform flex flex-col">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white flex items-center justify-center font-bold text-xs"><i class="ri-hashtag"></i></div>
+                                        <h4 class="font-black text-lg text-gray-900 dark:text-white">${o.id.replace('#','')}</h4>
+                                    </div>
+                                    <span class="${colors[o.dispatchStep]} px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-widest">${stepNames[o.dispatchStep]}</span>
+                                </div>
+                                <div class="mb-3 text-xs font-bold text-gray-900 dark:text-white flex items-center gap-2 px-1">
+                                    <i class="${o.customerId === 'WALK_IN' ? 'ri-store-2-fill text-gray-400' : 'ri-user-smile-fill text-gray-400'}"></i> ${o.name}
+                                </div>
+                                <div class="text-[11px] text-gray-600 dark:text-gray-400 font-medium bg-gray-50 dark:bg-gray-900 p-4 rounded-xl mb-4 line-clamp-2 leading-relaxed">
+                                    ${o.items.map(i=>`<span class="text-gray-900 dark:text-white font-bold">${i.qty}x</span> ${i.name}`).join(', ')}
+                                </div>
+                                <div class="mt-auto flex justify-between items-end px-1 border-t border-gray-50 dark:border-gray-800 pt-4">
+                                    <span class="text-gray-400 text-[9px] font-black uppercase tracking-widest">Total Pay</span>
+                                    <span class="font-black text-xl text-brand-600 dark:text-brand-500 tracking-tight">₹${o.total}</span>
+                                </div>
+                            </div>
+                        `).join('');
+                    },
+                    openModal(id) {
+                        const o = App.State.orders.find(x => x.id === id);
+                        App.State.currentOrder = o;
+                        document.getElementById('modal-order-id').innerText = o.id;
+                        document.getElementById('modal-order-type').innerText = o.customerId === "WALK_IN" ? "Store Order" : "App Order";
+                        document.getElementById('modal-cust-name').innerText = o.name;
+                        document.getElementById('modal-cust-address').innerText = o.address;
+                        document.getElementById('modal-total').innerText = `₹${o.total}`;
+                        document.getElementById('modal-call-btn').href = o.phone ? `tel:${o.phone}` : "#";
+                        
+                        document.getElementById('modal-items-list').innerHTML = o.items.map(i=>`
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50 dark:border-gray-800 last:border-0 px-1">
+                                <span class="font-bold text-sm text-gray-900 dark:text-white"><span class="text-gray-400 mr-2">${i.qty}x</span>${i.name}</span>
+                                <span class="font-black text-sm text-gray-900 dark:text-white">₹${i.qty*i.price}</span>
+                            </div>`).join('');
+                        
+                        document.querySelectorAll(`input[name="order-step"]`).forEach(r => r.checked = (r.value == o.dispatchStep));
+                        
+                        const m = document.getElementById('order-modal');
+                        m.classList.remove('hidden'); m.classList.add('flex');
+                        setTimeout(() => m.classList.remove('opacity-0'), 10);
+                    },
+                    closeModal() {
+                        const m = document.getElementById('order-modal');
+                        m.classList.add('opacity-0');
+                        setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+                    },
+                    async saveAndSync() {
+                        const step = parseInt(document.querySelector(`input[name="order-step"]:checked`).value);
+                        App.State.currentOrder.dispatchStep = step;
+                        if(step === 5) App.State.currentOrder.status = "Delivered";
+                        
+                        this.closeModal(); this.render(); App.Controllers.Home.render();
+                        App.UI.toast("Order Updated");
+                        await App.API.sync("updateOrder", { orderId: App.State.currentOrder.id, dispatchStep: step, status: step===5?"Delivered":"Active" });
+                    },
+                    async rejectOrder() {
+                        if(!confirm("Cancel this order?")) return;
+                        App.State.currentOrder.dispatchStep = -1;
+                        App.State.currentOrder.status = "Rejected";
+                        this.closeModal(); this.render(); App.Controllers.Home.render();
+                        await App.API.sync("updateOrder", { orderId: App.State.currentOrder.id, dispatchStep: -1, status: "Rejected" });
+                    }
+                },
+                Menu: {
+                    search(query) {
+                        App.State.menuSearch = query.toLowerCase();
+                        this.render();
+                    },
+                    render() {
+                        const grid = document.getElementById('menu-grid');
+                        const cats = ['All', ...new Set(App.State.menu.map(m => m.category))];
+                        
+                        document.getElementById('menu-categories').innerHTML = cats.map(c => `
+                            <button onclick="App.State.activeCategory='${c}'; App.Controllers.Menu.render()" 
+                                class="${App.State.activeCategory===c ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-white dark:bg-app-darkCard text-gray-500 border border-gray-200 dark:border-gray-800'} px-6 py-3.5 rounded-full text-xs font-black uppercase tracking-wide transition-all shrink-0 flex items-center gap-2 shadow-sm">
+                                <i class="${App.Icons[c] || App.Icons['Default']} text-base"></i> ${c}
+                            </button>`).join('');
+                        
+                        let items = App.State.activeCategory === 'All' ? App.State.menu : App.State.menu.filter(m => m.category === App.State.activeCategory);
+
+                        if(App.State.menuSearch) {
+                            items = items.filter(m => m.name.toLowerCase().includes(App.State.menuSearch));
+                        }
+
+                        grid.innerHTML = items.map(item => {
+                            const iconHtml = item.imageUrl 
+                                ? `<div class="w-full aspect-[4/3] rounded-xl mb-3 bg-cover bg-center" style="background-image: url('${item.imageUrl}')"></div>` 
+                                : `<div class="w-full aspect-[4/3] rounded-xl mb-3 bg-brand-50 dark:bg-gray-800 flex items-center justify-center text-brand-300 dark:text-gray-600"><i class="${App.Icons[item.category] || App.Icons['Default']} text-3xl opacity-50"></i></div>`;
+                                
+                            return `
+                            <div class="bg-white dark:bg-app-darkCard rounded-[1.5rem] p-2.5 shadow-sm border border-gray-100 dark:border-app-darkBorder relative flex flex-col h-full ${!item.active?'opacity-50 grayscale':''}">
+                                ${iconHtml}
+                                <div class="px-1 flex flex-col flex-grow text-center items-center pb-1">
+                                    <span class="text-[9px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">${item.category}</span>
+                                    <h4 class="font-bold text-xs text-gray-900 dark:text-white leading-tight mb-3 line-clamp-2 w-full">${item.name}</h4>
+                                    <div class="flex justify-between items-center w-full mt-auto">
+                                        <span class="font-black text-base text-gray-900 dark:text-white">₹${item.price}</span>
+                                        <button onclick="App.Controllers.Menu.openEditor('${item.id}')" class="w-8 h-8 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-900 dark:text-white transition-all"><i class="ri-pencil-fill text-sm"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        `}).join('');
+                    },
+                    async uploadImage(e) {
+                        const file = e.target.files[0];
+                        if(!file) return;
+                        const cloud = localStorage.getItem('c_cloud');
+                        const preset = localStorage.getItem('c_preset');
+                        if(!cloud || !preset) { App.UI.navigate('settings'); return App.UI.toast("Configure Cloudinary First.", "error"); }
+                        
+                        document.getElementById('upload-status').classList.remove('hidden');
+                        
+                        const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', preset);
+                        try {
+                            const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud}/image/upload`, {method:'POST', body:fd});
+                            const data = await res.json();
+                            document.getElementById('menu-item-image-url').value = data.secure_url;
+                            document.getElementById('image-preview-img').src = data.secure_url;
+                            document.getElementById('image-preview-img').classList.remove('hidden');
+                        } catch(err) { App.UI.toast("Upload Failed", "error"); }
+                        finally { document.getElementById('upload-status').classList.add('hidden'); }
+                    },
+                    openEditor(id = null) {
+                        const m = document.getElementById('menu-editor-modal');
+                        document.getElementById('menu-item-id').value = '';
+                        document.getElementById('menu-item-name').value = '';
+                        document.getElementById('menu-item-price').value = '';
+                        document.getElementById('menu-item-desc').value = '';
+                        document.getElementById('menu-item-image-url').value = '';
+                        document.getElementById('image-preview-img').src = '';
+                        document.getElementById('image-preview-img').classList.add('hidden');
+                        document.getElementById('btn-delete-menu').classList.remove('flex');
+                        document.getElementById('btn-delete-menu').classList.add('hidden');
+                        document.getElementById('menu-editor-title').innerText = "Add Item";
+
+                        if(id) {
+                            const item = App.State.menu.find(x => x.id === id);
+                            document.getElementById('menu-item-id').value = item.id;
+                            document.getElementById('menu-item-name').value = item.name;
+                            document.getElementById('menu-item-category').value = item.category;
+                            document.getElementById('menu-item-price').value = item.price;
+                            document.getElementById('menu-item-desc').value = item.desc;
+                            document.getElementById('menu-item-active').checked = item.active;
+                            if(item.imageUrl) {
+                                document.getElementById('menu-item-image-url').value = item.imageUrl;
+                                document.getElementById('image-preview-img').src = item.imageUrl;
+                                document.getElementById('image-preview-img').classList.remove('hidden');
+                            }
+                            document.getElementById('menu-editor-title').innerText = "Edit Item";
+                            const delBtn = document.getElementById('btn-delete-menu');
+                            delBtn.classList.remove('hidden'); delBtn.classList.add('flex');
+                            delBtn.onclick = () => this.deleteItem(id);
+                        }
+                        
+                        m.classList.remove('hidden'); m.classList.add('flex');
+                        setTimeout(() => m.classList.remove('opacity-0'), 10);
+                    },
+                    closeEditor() {
+                        const m = document.getElementById('menu-editor-modal');
+                        m.classList.add('opacity-0');
+                        setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+                    },
+                    async saveItem() {
+                        const item = {
+                            id: document.getElementById('menu-item-id').value || "M"+Date.now(),
+                            name: document.getElementById('menu-item-name').value,
+                            category: document.getElementById('menu-item-category').value,
+                            price: document.getElementById('menu-item-price').value,
+                            desc: document.getElementById('menu-item-desc').value,
+                            active: document.getElementById('menu-item-active').checked,
+                            imageUrl: document.getElementById('menu-item-image-url').value
+                        };
+                        const isNew = !document.getElementById('menu-item-id').value;
+                        if(isNew) App.State.menu.push(item);
+                        else { const idx = App.State.menu.findIndex(m=>m.id===item.id); App.State.menu[idx] = item; }
+                        
+                        this.render(); this.closeEditor(); App.Controllers.POS.renderMenu();
+                        await App.API.sync(isNew ? "addMenuItem" : "updateMenuItem", {item});
+                    },
+                    async deleteItem(id) {
+                        if(!confirm("Delete this item?")) return;
+                        App.State.menu = App.State.menu.filter(m => m.id !== id);
+                        this.render(); this.closeEditor(); App.Controllers.POS.renderMenu();
+                        await App.API.sync("deleteMenuItem", {itemId: id});
+                    }
+                }
+            },
+            start() {
+                this.UI.initTheme();
+                this.Controllers.Settings.init();
+                this.API.forceSync();
+                App.UI.navigate('home');
+                setInterval(() => { this.API.forceSync(); }, 15000);
+            }
+        };
+        document.addEventListener("DOMContentLoaded", () => App.start());
+    </script>
+</body>
+</html>
