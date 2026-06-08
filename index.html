@@ -358,12 +358,13 @@
                 <div class="space-y-4">
                     <input type="text" id="menu-item-name" placeholder="Item Name" required class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
                     <div class="grid grid-cols-2 gap-3">
-                        <select id="menu-item-category" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all appearance-none">
+                        <select id="menu-item-category" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all appearance-none" onchange="App.Controllers.Menu.handleCategoryChange()">
                             <option value="Coffee">Coffee</option>
                             <option value="Bakery">Bakery</option>
                             <option value="Meals">Meals</option>
                         </select>
                         <input type="number" id="menu-item-price" placeholder="Price (₹)" required class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
+                        <input type="text" id="menu-item-custom-category" placeholder="Enter custom category" class="hidden col-span-2 w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-bold focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all">
                     </div>
                     <textarea id="menu-item-desc" placeholder="Brief Description" rows="2" class="w-full px-5 py-3.5 bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-medium focus:border-brand-500 dark:focus:border-brand-500 outline-none transition-all resize-none"></textarea>
                     
@@ -732,6 +733,15 @@
                     }
                 },
                 Menu: {
+                    handleCategoryChange() {
+                        const select = document.getElementById('menu-item-category');
+                        const customInput = document.getElementById('menu-item-custom-category');
+                        if (select.value === 'Custom') {
+                            customInput.classList.remove('hidden');
+                        } else {
+                            customInput.classList.add('hidden');
+                        }
+                    },
                     search(query) {
                         App.State.menuSearch = query.toLowerCase();
                         this.render();
@@ -792,8 +802,18 @@
                     },
                     openEditor(id = null) {
                         const m = document.getElementById('menu-editor-modal');
+                        
+                        const cats = [...new Set(App.State.menu.map(x => x.category))];
+                        const defaultCats = ['Coffee', 'Bakery', 'Meals', 'Beverages', 'Desserts', 'Fast Food', 'Snacks'];
+                        const allCats = [...new Set([...defaultCats, ...cats])];
+                        const select = document.getElementById('menu-item-category');
+                        select.innerHTML = allCats.map(c => `<option value="${c}">${c}</option>`).join('') + `<option value="Custom">Custom...</option>`;
+                        
                         document.getElementById('menu-item-id').value = '';
                         document.getElementById('menu-item-name').value = '';
+                        document.getElementById('menu-item-category').value = allCats[0];
+                        document.getElementById('menu-item-custom-category').value = '';
+                        document.getElementById('menu-item-custom-category').classList.add('hidden');
                         document.getElementById('menu-item-price').value = '';
                         document.getElementById('menu-item-desc').value = '';
                         document.getElementById('menu-item-image-url').value = '';
@@ -831,10 +851,19 @@
                         setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
                     },
                     async saveItem() {
+                        let category = document.getElementById('menu-item-category').value;
+                        if (category === 'Custom') {
+                            category = document.getElementById('menu-item-custom-category').value.trim();
+                            if (!category) {
+                                App.UI.toast('Please enter a custom category', 'error');
+                                return;
+                            }
+                        }
+                        
                         const item = {
                             id: document.getElementById('menu-item-id').value || "M"+Date.now(),
                             name: document.getElementById('menu-item-name').value,
-                            category: document.getElementById('menu-item-category').value,
+                            category: category,
                             price: document.getElementById('menu-item-price').value,
                             desc: document.getElementById('menu-item-desc').value,
                             active: document.getElementById('menu-item-active').checked,
